@@ -12,6 +12,13 @@ public class EmailLookup {
     @Expose
     private Company c;
 
+    private String domain;
+
+    public EmailLookup(Person p, Company c, String domain) {
+        this.p = p;
+        this.c = c;
+        this.domain = domain;
+    }
 
     public Person getP() {
         return p;
