@@ -12,11 +12,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import com.google.gson.Gson;
-import com.sancheru.cleabitapi.model.Company;
 import com.sancheru.cleabitapi.model.Contact;
 import com.sancheru.cleabitapi.model.DomainModel;
 import com.sancheru.cleabitapi.model.EmailLookup;
-import com.sancheru.cleabitapi.model.Person;
 import com.sancheru.cleabitapi.model.Results;
 
 import org.apache.poi.hssf.usermodel.HSSFDateUtil;
@@ -37,26 +35,18 @@ import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.reactivex.Observable;
-import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
-import io.reactivex.SingleObserver;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Consumer;
-import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
-import io.reactivex.schedulers.TestScheduler;
 import jxl.Workbook;
 import jxl.WorkbookSettings;
 import jxl.write.Label;
@@ -108,132 +98,50 @@ public class MainActivity extends AppCompatActivity {
                 }).subscribe(this::handleResults, this::handleError);*/
 
         readExcelData();
-        try {
-            createExcelSheet();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
-        for (int i = 80; i < 130; i++) {
-            Log.e("MainActivity", "apply me " + domainList.get(i));
-            feedDatafromDomainList(domainList.get(i));
+        //from 50 to 100
+        for (int i = 50; i < 100; i++) {
+            //Log.e("MainActivity", "apply me " + domainList.get(i));
+
+            //feedDatafromDomainList(domainList.get(i));
             //feedDatafromDomainList2(domainList.get(i));
+            feedData(domainList.get(i));
+
         }
-        sleepForsomeTime();
+        //sleepForsomeTime();
     }
 
-    private void feedDatafromDomainList2(String domain) {
-
-        /*List<Results> listOfResults = new ArrayList<>();
-
-                    String social = "";
-                    HashMap<String, Results> resultsStringHashMap = new HashMap<>();
-
-                    if (contact.getResults().size() >= 2) {
-                        for (Results res : contact.getResultsArray()) {
-                            //sort the array based on the title
-                            if (res.getTitle() != null) {
-                                resultsStringHashMap.put(res.getTitle(), res);
-                            }
-                        }
-
-                        if (!resultsStringHashMap.isEmpty()) {
-                            List<String> sortedTitles = compareStringsandSort(queryString, resultsStringHashMap);
-
-                            Results res = resultsStringHashMap.get(sortedTitles.get(0));
-                            listOfResults.add(res);
-
-                            Log.e("MainActivity", "person data = " + domain + "\t" + res.getName().getFirstName() + "\t" +
-                                    res.getName().getLastName() + "\t" + res.getEmail() + "\t" + res.getTitle() + "\t" + social + "\t");
-
-                        } else { //all of the contacts has an null titles
-                            Results r1 = (Results) contact.getResults().get(0);
-                            listOfResults.add(r1);
-
-                            Log.e("MainActivity", "person data = " + domain + "\t" + r1.getName().getFirstName() + "\t" +
-                                    r1.getName().getLastName() + "\t" + r1.getEmail() + "\t" + r1.getTitle() + "\t" + social + "\t");
-                        }
-
-                    } else if (contact.getResults().size() == 0) {
-                        Log.e("MainActivity", "person data map = " + domain + "\t" + "\t" + "\t" +
-                                "\t" + "\t" + "\t" + "\t" + "\t" + "\t" + "" + "\t" + "No Result");
-                        //apped to excel sheet
-                    } else {
-                        Results res = (Results) contact.getResults().get(0);
-                        Log.e("MainActivity", "person data = " + domain + "\t" + res.getName().getFirstName() + "\t" +
-                                res.getName().getLastName() + "\t" + res.getEmail() + "\t" + res.getTitle() + "\t" + social + "\t");
-                        listOfResults.addAll(Arrays.asList(contact.getResultsArray()));
-                    }*/
-        streamFetchContactWithDomain(domain)
-                .concatMap(Observable::just).doOnNext(new Consumer<Contact>() {
-            @Override
-            public void accept(Contact contact) throws Exception {
-                List<Results> listOfResults = new ArrayList<>();
-
-                String social = "";
-                HashMap<String, Results> resultsStringHashMap = new HashMap<>();
-
-                if (contact.getResults().size() >= 2) {
-                    for (Results res : contact.getResultsArray()) {
-                        //sort the array based on the title
-                        if (res.getTitle() != null) {
-                            resultsStringHashMap.put(res.getTitle(), res);
-                        }
-                    }
-
-                    if (!resultsStringHashMap.isEmpty()) {
-                        List<String> sortedTitles = compareStringsandSort(queryString, resultsStringHashMap);
-
-                        Results res = resultsStringHashMap.get(sortedTitles.get(0));
-                        //listOfResults.add(res);
-
-                        Log.e("MainActivity", "person data = " + domain + "\t" + res.getName().getFirstName() + "\t" +
-                                res.getName().getLastName() + "\t" + res.getEmail() + "\t" + res.getTitle() + "\t" + social + "\t");
-
-                    } else { //all of the contacts has an null titles
-                        Results r1 = (Results) contact.getResults().get(0);
-                        //listOfResults.add(r1);
-
-                        Log.e("MainActivity", "person data = " + domain + "\t" + r1.getName().getFirstName() + "\t" +
-                                r1.getName().getLastName() + "\t" + r1.getEmail() + "\t" + r1.getTitle() + "\t" + social + "\t");
-                    }
-
-                } else if (contact.getResults().size() == 0) {
-                    Log.e("MainActivity", "person data map = " + domain + "\t" + "\t" + "\t" +
-                            "\t" + "\t" + "\t" + "\t" + "\t" + "\t" + "" + "\t" + "No Result");
-                    //apped to excel sheet
-                } else {
-                    Results res = (Results) contact.getResults().get(0);
-                    Log.e("MainActivity", "person data = " + domain + "\t" + res.getName().getFirstName() + "\t" +
-                            res.getName().getLastName() + "\t" + res.getEmail() + "\t" + res.getTitle() + "\t" + social + "\t");
-                    //listOfResults.addAll(Arrays.asList(contact.getResultsArray()));
-                }
-
-            }
-        }).subscribe(new Observer<Contact>() {
+    private void feedData(String domain) {
+        streamFetchContactWithDomain(domain).subscribe(new Observer<Contact>() {
             @Override
             public void onSubscribe(Disposable d) {
-
+                //Log.e(TAG, "onSubscribe");
             }
 
             @Override
             public void onNext(Contact contact) {
-
+                if (contact.getResults().size() == 0) {
+                    //Log.e(TAG, "onNext: domain: " + domain + ", Email: ");
+                } else {
+                    for (int i = 0; i < contact.getResults().size(); i++) {
+                        Log.e(TAG, domain + "\t" + contact.getResults().get(i).getEmail());
+                    }
+                }
             }
 
             @Override
             public void onError(Throwable e) {
-                Log.e("MainActivity", "error = " + e);
+                Log.e(TAG, domain + "\t" + e.getMessage());
             }
 
             @Override
             public void onComplete() {
-
+                //Log.e(TAG, "All users emitted!" + domain);
             }
         });
     }
 
-    private void feedDatafromDomainList(String domain) {
+    /*private void feedDatafromDomainList(String domain) {
         //feed the domain data from excel sheet for each cell
         Observable<EmailLookup> detailObservables = streamFetchContactWithDomain(domain)
                 .map(contact -> {//concat map
@@ -243,7 +151,7 @@ public class MainActivity extends AppCompatActivity {
                     HashMap<String, Results> resultsStringHashMap = new HashMap<>();
 
                     if (contact.getResults().size() >= 2) {
-                        for (Results res : contact.getResultsArray()) {
+                        for (Results res : contact.getResults()) {
                             //sort the array based on the title
                             if (res.getTitle() != null) {
                                 resultsStringHashMap.put(res.getTitle(), res);
@@ -276,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
                         Log.e("MainActivity", "person data = " + domain + "\t" + res.getName().getFirstName() + "\t" +
                                 res.getName().getLastName() + "\t" + res.getEmail() + "\t" + res.getTitle() + "\t" + social + "\t");
 
-                        listOfResults.addAll(Arrays.asList(contact.getResultsArray()));
+                        listOfResults.addAll(contact.getResults());
                     }
                     return listOfResults;
                 })
@@ -309,8 +217,8 @@ public class MainActivity extends AppCompatActivity {
                 //saveExcel(person);
 
                 //Log.e("MainActivity", "person data = email" + person.getP().getEmail() + "Domain " + domain + ", social " + social);
-                /*Log.e("MainActivity", "person data = " + domain + "\t" + person.getP().getName().getFirstName() + "\t" +
-                        person.getP().getName().getLastName() + "\t" + person.getP().getEmail() + "\t" + person.getP().getEmployment().getTitle() + "\t" + social + "\t");*/
+                *//*Log.e("MainActivity", "person data = " + domain + "\t" + person.getP().getName().getFirstName() + "\t" +
+                        person.getP().getName().getLastName() + "\t" + person.getP().getEmail() + "\t" + person.getP().getEmployment().getTitle() + "\t" + social + "\t");*//*
             }
 
             @Override
@@ -331,7 +239,7 @@ public class MainActivity extends AppCompatActivity {
                 //saveExcel(domainModelList);
             }
         });
-    }
+    }*/
 
     private void sleepForsomeTime() {
         new Handler().postDelayed(new Runnable() {
@@ -371,7 +279,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void createExcelSheet() throws IOException {
         File sd = new File(Environment.getExternalStorageDirectory(), "Download");
-        csvFile = "sandeep" + ".xls";
+        csvFile = "sandeep" + ".xlsx";
 
         directory = new File(sd.getAbsolutePath());
         //create directory if not exist
@@ -447,7 +355,7 @@ public class MainActivity extends AppCompatActivity {
     private void readExcelData() {
         AssetManager am = getAssets();
         try {
-            InputStream inputStream = am.open("sandeep.xls");
+            InputStream inputStream = am.open("clearbit.xlsx");
             //InputStream inputStream = new FileInputStream(inputFile);
             XSSFWorkbook workbook = new XSSFWorkbook(inputStream);
             XSSFSheet sheet = workbook.getSheetAt(0);

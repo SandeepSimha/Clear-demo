@@ -4,20 +4,19 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class Contact {
 
     @SerializedName("results")
     @Expose
-    private Results[] results;
+    private ArrayList<Results> results;
 
 
-    public ArrayList getResults() {
-        return new ArrayList(Arrays.asList(results));
+    public ArrayList<Results> getResults() {
+        return results;
     }
 
-    public Results[] getResultsArray() {
-        return results;
+    public void setResults(ArrayList<Results> results) {
+        this.results = results;
     }
 }
