@@ -5,19 +5,23 @@ import com.google.gson.GsonBuilder;
 import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import com.sancheru.cleabitapi.model.Contact;
 import com.sancheru.cleabitapi.model.EmailLookup;
-import com.sancheru.cleabitapi.model.Person;
 
 import io.reactivex.Observable;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.http.Field;
+import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
+import retrofit2.http.Header;
 import retrofit2.http.Headers;
+import retrofit2.http.POST;
 import retrofit2.http.Query;
 
 public interface ClearbitDomainService {
 
 
     //https://person-stream.clearbit.com/
+    String BASE_URL_IN = "https://script.google.com/";
     String BASE_URL = "https://prospector.clearbit.com/";
     String PERSON_BASE_URL = "https://person-stream.clearbit.com/";
 
@@ -41,16 +45,28 @@ public interface ClearbitDomainService {
     //sk_83896502960f585dcca1d73f35f3f517 - srisapet/Sapient@17 - team 4
     //sk_2b0a6a91fc2bb9461017e487f92f69e7 - srisapet/Sapient@17 - team mine
     //sk_21fd1288f442975a8c40ab5521c87715 - srisapet/Sapient@17 - team 5
-    @Headers("Authorization: Bearer sk_9ace7323fba74819ddc443dc018a7fe6")
+    //sk_bb348ca304f4c35bf55d4f3485e94052
+    @Deprecated //use getContactList()
+    @Headers("Authorization: Bearer sk_6cec0e03463530afa96fdaf30afe0106")
     @GET("v1/people/search")
     Observable<Contact> getContact(@Query("domain") String domain);
+
+
+    @GET("v1/people/search")
+    Observable<Contact> getContactList(@Query("domain") String domain, @Header("Authorization") String userkey);
 
     ///v2/combined/find?email=stanprish@healthyline.com
 
     //https://person-stream.clearbit.com/v2/combined/find?email=stanprish@healthyline.com
-    @Headers("Authorization: Bearer sk_4125fb4da845306ee67dfcdfe1ce2d78")//sk_bb348ca304f4c35bf55d4f3485e94052
+    @Headers("Authorization: Bearer sk_4125fb4da845306ee67dfcdfe1ce2d78")
     @GET("v2/combined/find")
     Observable<EmailLookup> getPersonInformation(@Query("email") String email);
+
+    @POST("macros/s/AKfycbyunmXXZZwR8qKYypnlEnDAOllACVCzc881IMjFuh3cKxFokKc/exec")
+    @FormUrlEncoded
+    Observable<String> savePost(@Field("action") String title,
+                                @Field("itemName") String body,
+                                @Field("brand") String userId);
 
     Gson gson = new GsonBuilder()
             .setLenient()
@@ -66,5 +82,11 @@ public interface ClearbitDomainService {
             .baseUrl(BASE_URL)
             .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
             .addConverterFactory(GsonConverterFactory.create(gson))
+            .build();
+
+    Retrofit retrofit = new Retrofit.Builder()
+            .baseUrl(BASE_URL_IN)
+            .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create())
             .build();
 }
