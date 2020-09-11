@@ -35,6 +35,7 @@ class MyWorkerThread extends AsyncTask<Object, Void, List<String>> {
     @Override
     protected List<String> doInBackground(Object... objects) {
         try {
+            publishProgress();
             String range = "Sheet1!A1:A201";//Sheet1!A1:B2//TODO:// take input from keyboard
             ValueRange result = sheetsService.spreadsheets().values()
                     .get(spreadsheetId, range)

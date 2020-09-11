@@ -2,8 +2,12 @@ package com.sancheru.cleabitapi;
 
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
+import android.view.View;
+import android.view.WindowManager;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -30,6 +34,8 @@ public class MainActivity extends AppCompatActivity implements AsyncResponse {
     private EditText toText;
     private EditText keyText;
     private MyWorkerThread asyncTask;
+    private ProgressBar mProgressBar;
+    private List<String> mDomainList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,16 +48,40 @@ public class MainActivity extends AppCompatActivity implements AsyncResponse {
         fromText = findViewById(R.id.editText_from);
         toText = findViewById(R.id.editText2_to);
         keyText = findViewById(R.id.editText_key);
+        mProgressBar = findViewById(R.id.progressBar);
 
         fab.setOnClickListener(view -> {
+
+            if (TextUtils.isEmpty(fromText.getText().toString().trim())) {
+                fromText.setFocusable(true);
+                fromText.setError("Please give some number");
+                return;
+            }
+
+            if (TextUtils.isEmpty(toText.getText().toString().trim())) {
+                toText.setFocusable(true);
+                toText.setError("Please give some number");
+                return;
+            }
+
+            if (Integer.parseInt(toText.getText().toString().trim()) < Integer.parseInt(fromText.getText().toString().trim())) {
+                Toast.makeText(this, "Please enter correct numbers ", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            mProgressBar.setVisibility(View.VISIBLE);
+            getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
             if (asyncTask == null) {
                 asyncTask = new MyWorkerThread(this);
             }
 
-            if (asyncTask.getStatus() != AsyncTask.Status.RUNNING) {   // check if asyncTasks is running
+            if (asyncTask.getStatus() != AsyncTask.Status.RUNNING && mDomainList == null) {   // check if asyncTasks is running
                 asyncTask.cancel(true); // asyncTasks not running => cancel it
                 asyncTask = new MyWorkerThread(this); // reset task
                 asyncTask.execute(); // execute new task (the same task)
+            } else {
+                publishData(mDomainList);
             }
         });
 
@@ -60,17 +90,23 @@ public class MainActivity extends AppCompatActivity implements AsyncResponse {
 
     @Override
     public void processFinish(List<String> domainList) {
-        //Show Loading screen
+        mDomainList = domainList;
+        publishData(mDomainList);
+    }
+
+    private void publishData(List<String> domainList){
         Log.e(TAG, "SUCCESS: " + domainList.size());
+        mProgressBar.setVisibility(View.GONE);
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
         List<Observable<?>> requests = new ArrayList<>();
 
         //TODO:give the range from in/p
-        int from = Integer.parseInt(fromText.getText().toString()) - 1;
-        int to = Integer.parseInt(toText.getText().toString()) - 1;
+        int from = Integer.parseInt(fromText.getText().toString().trim()) - 1;
+        int to = Integer.parseInt(toText.getText().toString().trim()) - 1;
 
         for (int i = from; i <= to; i++) {
             if (domainList.size() != 0) {
-                Log.e(TAG, "domainList:" + domainList.get(i));
+                Log.e(TAG, "domainList: " + domainList.get(i));
                 requests.add(streamFetchContactWithDomainList(domainList.get(i), keyText.getText().toString()));
                 //feedData(domainList.get(i));
                 //feedData2(domainList.get(i));
@@ -99,19 +135,23 @@ public class MainActivity extends AppCompatActivity implements AsyncResponse {
                         emailData2.add(email);
                     }
                 }
-                Log.e(TAG, "email data = " + emailData.size() + 1);
+                Log.e(TAG, "email data = " + emailData.size());
                 emailData.add(emailData2.toString());
-                try {
-                    Thread.sleep(2500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+
                 StringBuilder builder = new StringBuilder();
                 for (String value : emailData2) {
                     builder.append(value).append(", ");
                 }
                 String text = builder.toString();
-                streamFetchDomainListContacts("sandeep", text)
+
+                //Delay 2.5ms
+                try {
+                    Thread.sleep(2500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                //The below Method to upload the Email string builder to google sheet
+                streamUploadEmailData("sandeep", text.substring(0, text.length() - 2))
                         .flatMap(new Function<String, ObservableSource<?>>() {
                             @Override
                             public ObservableSource<?> apply(String s) throws Exception {
@@ -149,7 +189,7 @@ public class MainActivity extends AppCompatActivity implements AsyncResponse {
 
             @Override
             public void onNext(List<String> strings) {
-                Log.e(TAG, "email data = " + strings.size());
+                Log.e(TAG, "Total emails sent to host = " + strings.size());
                 processSuccess();
                 //finish Loading screen
             }
@@ -174,7 +214,7 @@ public class MainActivity extends AppCompatActivity implements AsyncResponse {
                 .observeOn(AndroidSchedulers.mainThread());
     }
 
-    public Observable<String> streamFetchDomainListContacts(String domainName, String domainData) {
+    public Observable<String> streamUploadEmailData(String domainName, String domainData) {
         return ClearbitDomainService.retrofit.create(ClearbitDomainService.class)
                 .savePost("addItem", domainName, domainData)
                 .subscribeOn(Schedulers.io())
